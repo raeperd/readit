@@ -2,9 +2,11 @@ module github.com/raeperd/readit
 
 go 1.21.4
 
+require golang.org/x/net v0.15.0 // indirect
+
 require (
-	github.com/ericchiang/css v1.3.0
-	golang.org/x/net v0.15.0
+	github.com/PuerkitoBio/goquery v1.8.1
+	github.com/carlmjohnson/requests v0.23.5
 )
 
-require github.com/carlmjohnson/requests v0.23.5
+require github.com/andybalholm/cascadia v1.3.1 // indirect

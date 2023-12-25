@@ -7,31 +7,25 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/carlmjohnson/requests"
-	"github.com/ericchiang/css"
-	"golang.org/x/net/html"
 )
 
 //go:embed testdata/techblog.woowahan.com.html
 var seed string
 
 func main() {
-	query, err := css.Parse("div.post-item > a")
-	if err != nil {
-		log.Fatal(err)
-	}
-	node, err := html.Parse(strings.NewReader(seed))
+	document, err := goquery.NewDocumentFromReader(strings.NewReader(seed))
 	if err != nil {
 		log.Fatal(err)
 	}
 	urls := make([]string, 0)
-	for _, element := range query.Select(node) {
-		for _, attr := range element.Attr {
-			if attr.Key == "href" {
-				urls = append(urls, attr.Val)
-			}
+	document.Find("div.post-item > a").Each(func(i int, s *goquery.Selection) {
+		href, exists := s.Attr("href")
+		if exists {
+			urls = append(urls, href)
 		}
-	}
+	})
 
 	client := http.Client{}
 	ctx := context.Background()
@@ -46,25 +40,18 @@ func main() {
 	}
 
 	articleQuery := ArticleQuery{
-		Title:    *css.MustParse("div.post-header > h1"),
-		Contents: *css.MustParse("div.post-content-inner"),
+		Title:    "div.post-header > h1",
+		Contents: "div.post-content-inner",
 	}
 	articles := make([]Article, len(htmls))
 	for i, body := range htmls {
-		node, err := html.Parse(strings.NewReader(body))
+		document, err := goquery.NewDocumentFromReader(strings.NewReader(body))
 		if err != nil {
 			log.Fatal(err)
 		}
-		article := Article{}
-		for _, element := range articleQuery.Title.Select(node) {
-			article.Title = element.FirstChild.Data
-		}
-		for _, element := range articleQuery.Contents.Select(node) {
-			var contents strings.Builder
-			for c := element.FirstChild; c != nil; c = c.NextSibling {
-				contents.WriteString(c.Data)
-			}
-			article.Contents = contents.String()
+		article := Article{
+			Title:    document.Find(articleQuery.Title).Text(),
+			Contents: document.Find(articleQuery.Contents).Text(),
 		}
 		articles[i] = article
 	}
@@ -75,8 +62,8 @@ func main() {
 }
 
 type ArticleQuery struct {
-	Title    css.Selector
-	Contents css.Selector
+	Title    string
+	Contents string
 }
 
 type Article struct {
