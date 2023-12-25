@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	_ "embed"
 	"log"
+	"net/http"
 	"strings"
 
+	"github.com/carlmjohnson/requests"
 	"github.com/ericchiang/css"
 	"golang.org/x/net/html"
 )
@@ -21,11 +24,22 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	urls := make([]string, 0)
 	for _, element := range query.Select(node) {
 		for _, attr := range element.Attr {
 			if attr.Key == "href" {
-				log.Println(attr.Val)
+				urls = append(urls, attr.Val)
 			}
 		}
+	}
+	client := http.Client{}
+	ctx := context.Background()
+	for _, url := range urls {
+		var body string
+		err := requests.URL(url).Client(&client).ToString(&body).Fetch(ctx)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Print(body)
 	}
 }

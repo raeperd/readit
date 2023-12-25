@@ -4,5 +4,7 @@ go 1.21.4
 
 require (
 	github.com/ericchiang/css v1.3.0
-	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f
+	golang.org/x/net v0.15.0
 )
+
+require github.com/carlmjohnson/requests v0.23.5
