@@ -32,14 +32,54 @@ func main() {
 			}
 		}
 	}
+
 	client := http.Client{}
 	ctx := context.Background()
-	for _, url := range urls {
+	htmls := make([]string, len(urls))
+	for i, url := range urls {
 		var body string
 		err := requests.URL(url).Client(&client).ToString(&body).Fetch(ctx)
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Print(body)
+		htmls[i] = body
 	}
+
+	articleQuery := ArticleQuery{
+		Title:    *css.MustParse("div.post-header > h1"),
+		Contents: *css.MustParse("div.post-content-inner"),
+	}
+	articles := make([]Article, len(htmls))
+	for i, body := range htmls {
+		node, err := html.Parse(strings.NewReader(body))
+		if err != nil {
+			log.Fatal(err)
+		}
+		article := Article{}
+		for _, element := range articleQuery.Title.Select(node) {
+			article.Title = element.FirstChild.Data
+		}
+		for _, element := range articleQuery.Contents.Select(node) {
+			var contents strings.Builder
+			for c := element.FirstChild; c != nil; c = c.NextSibling {
+				contents.WriteString(c.Data)
+			}
+			article.Contents = contents.String()
+		}
+		articles[i] = article
+	}
+
+	for _, article := range articles {
+		log.Printf("title: %v contents: %v", article.Title, article.Contents)
+	}
+}
+
+type ArticleQuery struct {
+	Title    css.Selector
+	Contents css.Selector
+}
+
+type Article struct {
+	Title    string
+	Contents string
 }
