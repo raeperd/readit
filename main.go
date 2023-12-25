@@ -41,7 +41,7 @@ func main() {
 
 	articleQuery := ArticleQuery{
 		Title:    "div.post-header > h1",
-		Contents: "div.post-content-inner",
+		Contents: "div.post-content-inner > :not(div.toc)",
 	}
 	articles := make([]Article, len(htmls))
 	for i, body := range htmls {
